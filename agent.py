@@ -6,11 +6,15 @@ def main():
    tokenizer = AutoTokenizer.from_pretrained(model_name)
    model = AutoModelForCausalLM.from_pretrained(model_name)
    
+   if tokenizer.pad_token is None:
+       tokenizer.pad_token = tokenizer.eos_token
+   
    messages = [
         {"role": "user", "content": "Hello! Can you introduce yourself?"}
     ]
-   inputs = tokenizer.apply_chat_template(messages,return_tensors="pt").to(model.device)
-   outputs = model.generate(inputs, max_new_tokens=100)
+   prompt = tokenizer.apply_chat_template(messages,tokenize=False,add_generation_prompt=True)
+   inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
+   outputs = model.generate(inputs.input_ids, max_new_tokens=100, attention_mask=inputs.attention_mask)
    response = tokenizer.decode(outputs[0], skip_special_tokens=True)
    print(response)
 
